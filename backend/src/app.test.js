@@ -226,4 +226,26 @@ describe('TruthCheck API', () => {
       { vote_type: 'menyesatkan', count: 1 },
     ]);
   });
+
+  test('membatalkan transaksi ketika callback gagal', () => {
+    const email = 'transaksi-rollback@example.com';
+    expect(() => db.transaction(() => {
+      db.query(
+        'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
+      ).run('Pengguna Transaksi', email, 'hash-tes');
+      throw new Error('Simulasi kegagalan transaksi.');
+    })()).toThrow('Simulasi kegagalan transaksi.');
+
+    expect(db.query('SELECT id FROM users WHERE email = ?').get(email)).toBeUndefined();
+  });
+
+  test('meneruskan error constraint database selain duplikasi unik', () => {
+    const claimId = db.query('SELECT id FROM claims LIMIT 1').get().id;
+    const userId = db.query('SELECT id FROM users LIMIT 1').get().id;
+
+    expect(() => db.query(`
+      INSERT INTO votes (claim_id, user_id, vote_type)
+      VALUES (?, ?, ?)
+    `).run(claimId, userId, 'tidak-valid')).toThrow(/CHECK constraint failed/);
+  });
 });
