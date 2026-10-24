@@ -1,0 +1,8 @@
+node_modules/
+.env
+.env.*
+!.env.example
+backend/node_modules/
+backend/data/
+backend/dist/
+coverage/

@@ -1,0 +1,14 @@
+{
+  "name": "truthcheck",
+  "private": true,
+  "scripts": {
+    "start": "bun run backend/src/server.js",
+    "build": "bun run --cwd frontend build",
+    "test": "bun test"
+  },
+  "type": "module",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ]
+}
