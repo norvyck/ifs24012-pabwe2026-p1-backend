@@ -57,7 +57,7 @@ pipeline {
         stage('Test') {
             agent {
                 docker {
-                    image 'node:24-alpine'
+                    image 'oven/bun:alpine'
                     reuseNode true
                 }
             }
@@ -66,15 +66,8 @@ pipeline {
                 sh '''
                     set -e
 
-                    echo "=== Running Tests with Coverage ==="
-
-                    if [ -f angular.json ]; then
-                        echo "Framework: Angular"
-                        npx ng test --coverage
-                    else
-                        echo "Framework: React, Next.js, Vue, Nuxt, Svelte, or SvelteKit"
-                        npx vitest run --coverage
-                    fi
+                    echo "=== Running Bun Tests with Coverage ==="
+                    bun test --coverage
 
                     echo "=== Tests Passed ==="
                 '''
