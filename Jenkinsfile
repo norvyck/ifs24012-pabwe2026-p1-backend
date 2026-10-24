@@ -223,7 +223,7 @@ pipeline {
                         -x "latest-app.zip" \
                         -x "trivy-results.sarif"
 
-                    if unzip -Z1 latest-app.zip | grep -Eq '(^|/)node_modules/.+|(^|/)\.scannerwork/.+'; then
+                    if unzip -Z1 latest-app.zip | grep -Eq '(^|/)node_modules/.+|(^|/)[.]scannerwork/.+'; then
                         echo "Unexpected dependencies or scanner files found in application package."
                         exit 1
                     fi
