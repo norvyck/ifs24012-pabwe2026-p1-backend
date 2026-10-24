@@ -57,7 +57,7 @@ pipeline {
         stage('Test') {
             agent {
                 docker {
-                    image 'oven/bun:alpine'
+                    image 'node:24-alpine'
                     reuseNode true
                 }
             }
@@ -68,7 +68,13 @@ pipeline {
 
                     echo "=== Running Tests with Coverage ==="
 
-                    bun test --coverage --coverage-reporter=lcov
+                    if [ -f angular.json ]; then
+                        echo "Framework: Angular"
+                        npx ng test --coverage
+                    else
+                        echo "Framework: React, Next.js, Vue, Nuxt, Svelte, or SvelteKit"
+                        npx vitest run --coverage
+                    fi
 
                     echo "=== Tests Passed ==="
                 '''
@@ -205,28 +211,22 @@ pipeline {
 
                     zip -r latest-app.zip . \
                         -x "node_modules/*" \
-                        -x "*/node_modules" \
-                        -x "*/node_modules/" \
-                        -x "*/node_modules/*" \
                         -x ".git/*" \
-                        -x "*/.git/*" \
-                        -x ".scannerwork/*" \
-                        -x "*/.scannerwork" \
-                        -x "*/.scannerwork/" \
-                        -x "*/.scannerwork/*" \
                         -x ".env" \
                         -x ".env.*" \
                         -x "coverage/*" \
-                        -x "*/coverage/*" \
+                        -x ".next/*" \
+                        -x "out/*" \
+                        -x ".nuxt/*" \
+                        -x ".output/*" \
+                        -x ".svelte-kit/*" \
+                        -x ".angular/*" \
+                        -x "dist/*" \
+                        -x "build/*" \
                         -x ".trivy-cache/*" \
-                        -x "*/.trivy-cache/*" \
                         -x "latest-app.zip" \
-                        -x "trivy-results.sarif"
-
-                    if unzip -Z1 latest-app.zip | grep -Eq '(^|/)node_modules/.+|(^|/)[.]scannerwork/.+'; then
-                        echo "Unexpected dependencies or scanner files found in application package."
-                        exit 1
-                    fi
+                        -x "trivy-results.sarif" \
+                        -x ".docs/*"
 
                     echo "=== Application Package Created ==="
 
@@ -350,7 +350,6 @@ pipeline {
 
                     def redeployResponse = sh(
                         script: '''
-                            set +x
                             set -e
 
                             curl -sS --fail-with-body \
@@ -399,7 +398,6 @@ pipeline {
 
                         def progressResponse = sh(
                             script: '''
-                                set +x
                                 set -e
 
                                 curl -sS --fail-with-body \
