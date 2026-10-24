@@ -4,11 +4,15 @@
   "scripts": {
     "start": "bun run backend/src/server.js",
     "build": "bun run --cwd frontend build",
-    "test": "bun test"
+    "test": "vitest run --coverage"
   },
   "type": "module",
   "workspaces": [
     "backend",
     "frontend"
-  ]
+  ],
+  "devDependencies": {
+    "@vitest/coverage-v8": "5.0.5",
+    "vitest": "5.0.5"
+  }
 }

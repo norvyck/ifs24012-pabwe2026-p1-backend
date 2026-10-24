@@ -1,11 +1,12 @@
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
-import { Database } from 'bun:sqlite';
+import { fileURLToPath } from 'node:url';
 import bcrypt from 'bcryptjs';
 
+const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const defaultDbPath = process.env.VERCEL
   ? '/tmp/truthcheck.db'
-  : path.join(import.meta.dir, '..', 'data', 'truthcheck.db');
+  : path.join(currentDirectory, '..', 'data', 'truthcheck.db');
 
 const databasePath = path.resolve(
   process.env.DATABASE_PATH || defaultDbPath,
@@ -13,7 +14,58 @@ const databasePath = path.resolve(
 
 mkdirSync(path.dirname(databasePath), { recursive: true });
 
-export const db = new Database(databasePath, { create: true, strict: true });
+const bunRuntime = typeof Bun !== 'undefined';
+let database;
+
+if (bunRuntime) {
+  const { Database } = await import('bun:sqlite');
+  database = new Database(databasePath, { create: true, strict: true });
+} else {
+  const { DatabaseSync } = await import('node:sqlite');
+  database = new DatabaseSync(databasePath);
+}
+
+export const db = {
+  exec: (sql) => database.exec(sql),
+  query: (sql) => {
+    if (bunRuntime) return database.query(sql);
+
+    const statement = database.prepare(sql);
+    return {
+      get: (...values) => statement.get(...values),
+      all: (...values) => statement.all(...values),
+      run: (...values) => {
+        try {
+          return statement.run(...values);
+        } catch (error) {
+          if (error.errcode === 2067) {
+            throw Object.assign(new Error(error.message, { cause: error }), {
+              code: 'SQLITE_CONSTRAINT_UNIQUE',
+            });
+          }
+          throw error;
+        }
+      },
+    };
+  },
+  transaction: (callback) => {
+    if (bunRuntime) return database.transaction(callback);
+
+    return () => {
+      database.exec('BEGIN');
+      try {
+        const result = callback();
+        database.exec('COMMIT');
+        return result;
+      } catch (error) {
+        database.exec('ROLLBACK');
+        throw error;
+      }
+    };
+  },
+  close: () => database.close(),
+};
+
 db.exec('PRAGMA foreign_keys = ON');
 
 db.exec(`

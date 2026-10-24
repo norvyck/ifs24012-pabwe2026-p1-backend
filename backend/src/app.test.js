@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -53,7 +53,7 @@ describe('TruthCheck API', () => {
     }));
     expect(registration.status).toBe(201);
     const registered = await registration.json();
-    expect(registered.token).toBeString();
+    expect(registered.token).toEqual(expect.any(String));
     expect(db.query('SELECT password_hash FROM users WHERE email = ?')
       .get('tes@example.com').password_hash).not.toBe('password-aman');
 
@@ -62,7 +62,7 @@ describe('TruthCheck API', () => {
       password: 'password-aman',
     }));
     expect(login.status).toBe(200);
-    expect((await login.json()).token).toBeString();
+    expect((await login.json()).token).toEqual(expect.any(String));
   });
 
   test('mengelola klaim dan bukti, serta menolak suara kedua dari pengguna yang sama', async () => {

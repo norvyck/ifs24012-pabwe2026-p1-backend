@@ -3,12 +3,14 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { db } from './db.js';
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
 
-const frontendDist = path.resolve(import.meta.dir, '../../frontend/dist');
+const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
+const frontendDist = path.resolve(currentDirectory, '../../frontend/dist');
 app.use(express.static(frontendDist));
 
 class HttpError extends Error {
